@@ -9,14 +9,25 @@ async function initRedis() {
   connectionAttempted = true;
 
   try {
-    client = redis.createClient({
+    const redisConfig = {
       socket: {
         host: process.env.REDIS_HOST,
-        port: process.env.REDIS_PORT,
+        port: parseInt(process.env.REDIS_PORT) || 6379,
         reconnectStrategy: false, // Disable auto-reconnect
       },
-      password: process.env.REDIS_PASSWORD || undefined,
-    });
+    };
+
+    // Add password if provided (for Upstash or other external Redis)
+    if (process.env.REDIS_PASSWORD) {
+      redisConfig.password = process.env.REDIS_PASSWORD;
+    }
+
+    // Enable TLS for Upstash (external Redis services usually require TLS)
+    if (process.env.REDIS_HOST && process.env.REDIS_HOST.includes('upstash.io')) {
+      redisConfig.socket.tls = true;
+    }
+
+    client = redis.createClient(redisConfig);
 
     // Suppress error logs after initial connection attempt
     let errorLogged = false;
