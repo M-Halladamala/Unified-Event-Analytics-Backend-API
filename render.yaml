@@ -1,0 +1,70 @@
+services:
+  # Web Service (Node.js API)
+  - type: web
+    name: analytics-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: API_KEY_EXPIRY_DAYS
+        value: 365
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: DB_HOST
+        fromDatabase:
+          name: analytics-postgres
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: analytics-postgres
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: analytics-postgres
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: analytics-postgres
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: analytics-postgres
+          property: password
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: analytics-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: analytics-redis
+          property: port
+
+  # Redis Service
+  - type: redis
+    name: analytics-redis
+    region: oregon
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+databases:
+  # PostgreSQL Database
+  - name: analytics-postgres
+    region: oregon
+    plan: free
+    databaseName: analytics_db
+    user: analytics_user
+    postgresMajorVersion: 15

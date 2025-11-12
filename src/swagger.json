@@ -1,0 +1,265 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Unified Event Analytics API",
+    "version": "1.0.0",
+    "description": "Scalable backend API for collecting and analyzing web and mobile analytics events"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "schemas": {
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["name", "ownerEmail"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "My Website"
+          },
+          "ownerEmail": {
+            "type": "string",
+            "format": "email",
+            "example": "owner@example.com"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "API is running"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register new app and generate API key",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "App registered successfully"
+          }
+        }
+      }
+    },
+    "/api/auth/api-key": {
+      "post": {
+        "summary": "Get API key info by email",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API key info retrieved"
+          }
+        }
+      }
+    },
+    "/api/auth/revoke": {
+      "post": {
+        "summary": "Revoke API key",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["appId"],
+                "properties": {
+                  "appId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API key revoked successfully"
+          }
+        }
+      }
+    },
+    "/api/auth/regenerate": {
+      "post": {
+        "summary": "Regenerate API key",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["appId"],
+                "properties": {
+                  "appId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API key regenerated successfully"
+          }
+        }
+      }
+    },
+    "/api/analytics/collect": {
+      "post": {
+        "summary": "Collect analytics event",
+        "security": [{"ApiKeyAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["event"],
+                "properties": {
+                  "event": {"type": "string", "example": "button_click"},
+                  "url": {"type": "string", "example": "https://example.com/page"},
+                  "referrer": {"type": "string", "example": "https://google.com"},
+                  "device": {"type": "string", "example": "mobile"},
+                  "ipAddress": {"type": "string", "example": "192.168.1.1"},
+                  "timestamp": {"type": "string", "format": "date-time"},
+                  "userId": {"type": "string", "example": "user123"},
+                  "metadata": {
+                    "type": "object",
+                    "example": {
+                      "browser": "Chrome",
+                      "os": "Android"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Event collected successfully"
+          },
+          "401": {
+            "description": "Invalid or missing API key"
+          }
+        }
+      }
+    },
+    "/api/analytics/event-summary": {
+      "get": {
+        "summary": "Get event summary statistics",
+        "security": [{"ApiKeyAuth": []}],
+        "parameters": [
+          {
+            "name": "event",
+            "in": "query",
+            "schema": {"type": "string"},
+            "description": "Filter by event name"
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time"},
+            "description": "Start date for filtering"
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time"},
+            "description": "End date for filtering"
+          },
+          {
+            "name": "app_id",
+            "in": "query",
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "Filter by app ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event summary retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/analytics/user-stats": {
+      "get": {
+        "summary": "Get user statistics",
+        "security": [{"ApiKeyAuth": []}],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {"type": "string"},
+            "description": "User ID to get stats for"
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time"},
+            "description": "Start date for filtering"
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time"},
+            "description": "End date for filtering"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User statistics retrieved successfully"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    }
+  }
+}
